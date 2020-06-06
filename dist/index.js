@@ -19,7 +19,13 @@ module.exports =
 /******/ 		};
 /******/
 /******/ 		// Execute the module function
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/ 		var threw = true;
+/******/ 		try {
+/******/ 			modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/ 			threw = false;
+/******/ 		} finally {
+/******/ 			if(threw) delete installedModules[moduleId];
+/******/ 		}
 /******/
 /******/ 		// Flag the module as loaded
 /******/ 		module.l = true;
@@ -1736,65 +1742,68 @@ module.exports = require("fs");
 (async () => {
   const core = __webpack_require__(276)
 
-  const { performance } = __webpack_require__(630)
-
   const common = __webpack_require__(498)
 
   const platform = __webpack_require__(87).platform()
 
+  let ref = core.getInput('setup-ruby-ref')
+  if (ref === '') { ref = 'ruby/setup-ruby/v1' }
+
   try {
-    const msgPre = 'Image info: https://github.com/actions/virtual-environments/tree/' +
-                   `${process.env.ImageOS}/${process.env.ImageVersion}`
-    switch (platform) {
-      case 'linux':
-        console.log(`${msgPre}/images/linux`)
-        break;
-      case 'win32':
-        console.log(`${msgPre}/images/win`)
-        break;
-      case 'darwin':
-        console.log('See https://github.com/actions/virtual-environments/commits/master/images/macos')
-        console.log(`Using Image ${process.env.ImageOS} / ${process.env.ImageVersion}`)
-        break;
-      default:
-        console.log(`Using Image ${process.env.ImageOS} / ${process.env.ImageVersion}`)
-    }
-
-    if (core.getInput('ruby-version') !== 'none') {
-      const fn = `${process.env.RUNNER_TEMP}\\setup_ruby.js`
-      console.log(`  pwd: ${process.cwd()}`)
-      const msSt = performance.now()
-      let ref = core.getInput('setup-ruby-ref')
-      if (ref === '') {
-        ref = 'ruby/setup-ruby/v1'
-      }
-    common.log(`  Running ${ref}`)
-      await common.download(`https://raw.githubusercontent.com/${ref}/dist/index.js`, fn, false)
-      await require(fn).run()
-      const timeStr = ((performance.now() - msSt)/1000).toFixed(2).padStart(6)
-      console.log(`  took ${timeStr} s`)
-    }
-
-    common.log(`  Running MSP-Greg/setup-ruby-pkgs ${common.version}`)
-
-    let runner
 
     core.exportVariable('TMPDIR', process.env.RUNNER_TEMP)
     core.exportVariable('CI'    , 'true')
 
-    if      ( platform === 'linux' )              { runner = __webpack_require__(26  ) }
-    else if ( platform === 'darwin')              { runner = __webpack_require__(924 ) }
-    else if (platform === 'win32'  ) {
-      const ruby = common.ruby()
+    const pkgs = async () => {
+      common.log(`  —————————————————— Package tasks using: MSP-Greg/setup-ruby-pkgs ${common.version}`)
 
-      if      ( ruby.platform.includes('mingw') ) { runner = __webpack_require__(505) }
-      else if ( ruby.platform.includes('mswin') ) { runner = __webpack_require__(894) }
+      let runner
+      let ruby
 
-      if (runner) { runner.setRuby(ruby) }  // pass Ruby info to runner
+      switch (platform) {
+        case 'linux':
+          runner = __webpack_require__(26)  ; break
+        case 'darwin':
+          runner = __webpack_require__(924) ; break
+        case 'win32':
+          ruby = common.ruby()
+
+          if      ( ruby.platform.includes('mingw') ) { runner = __webpack_require__(505) }
+          else if ( ruby.platform.includes('mswin') ) { runner = __webpack_require__(894) }
+
+          if (runner) { runner.setRuby(ruby) }  // pass Ruby info to runner
+      }
+
+      if      ( platform === 'linux' )              { runner = __webpack_require__(26  ) }
+      else if ( platform === 'darwin')              { runner = __webpack_require__(924 ) }
+      else if ( platform === 'win32' ) {
+        const ruby = common.ruby()
+
+        if      ( ruby.platform.includes('mingw') ) { runner = __webpack_require__(505) }
+        else if ( ruby.platform.includes('mswin') ) { runner = __webpack_require__(894) }
+
+        if (runner) { runner.setRuby(ruby) }  // pass Ruby info to runner
+      }
+
+      if (runner) { await runner.run() }
+
+      if ((core.getInput('ruby-version') !== 'none') &&
+          (core.getInput('bundler') !== 'none')    ) {
+        common.log(`  —————————————————— Bundler tasks using: ${ref}`)
+      }
     }
 
-    if (runner) { await runner.run() }
-
+    if (core.getInput('ruby-version') !== 'none') {
+      const fn = `${process.env.RUNNER_TEMP}\\setup_ruby.js`
+      common.log(`  ——————————————————    Ruby tasks using: ${ref}`)
+      await common.download(`https://raw.githubusercontent.com/${ref}/dist/index.js`, fn, false)
+      // pass pkgs function to setup-ruby, allows package installation before
+      // 'bundle install' but after ruby setup (install, paths, compile tools, etc)
+      await require(fn).run(pkgs)
+    } else {
+      // install packages if setup-ruby is not used
+      await pkgs()
+    }
   } catch (e) {
     console.log(`::error::${e.message}`)
     process.exitCode = 1
@@ -1907,9 +1916,9 @@ let mswin = getInput('mswin')
 let choco = getInput('choco')
 let vcpkg = getInput('vcpkg')
 
-let ruby                                   // eslint-disable-line no-unused-vars
+let ruby
 
-const setRuby = (_ruby) => { ruby = _ruby }
+const setRuby = (_ruby) => { ruby = _ruby } // eslint-disable-line no-unused-vars
 
 const run = async () => {
   try {

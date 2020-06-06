@@ -29,10 +29,14 @@
 
     if (core.getInput('ruby-version') !== 'none') {
       const fn = `${process.env.RUNNER_TEMP}\\setup_ruby.js`
-      common.log('  Running ruby/setup-ruby')
       console.log(`  pwd: ${process.cwd()}`)
       const msSt = performance.now()
-      await common.download('https://raw.githubusercontent.com/ruby/setup-ruby/v1/dist/index.js', fn, false)
+      let ref = core.getInput('setup-ruby-ref')
+      if (ref === '') {
+        ref = 'ruby/setup-ruby/v1'
+      }
+    common.log(`  Running ${ref}`)
+      await common.download(`https://raw.githubusercontent.com/${ref}/dist/index.js`, fn, false)
       await require(fn).run()
       const timeStr = ((performance.now() - msSt)/1000).toFixed(2).padStart(6)
       console.log(`  took ${timeStr} s`)

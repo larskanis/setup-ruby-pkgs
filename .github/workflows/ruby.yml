@@ -22,6 +22,7 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           apt-get: ragel
           brew: ragel
+          setup-ruby-ref: eregon/setup-ruby/automated-bundler-caching
 
       - name: Info
         run:  |
@@ -57,6 +58,7 @@ jobs:
           mingw: _upgrade_ openssl ragel
           mswin: bison mingw-w64-x86_64-ragel
           vcpkg: readline
+          setup-ruby-ref: eregon/setup-ruby/automated-bundler-caching
 
       - name: Info
         run:  |

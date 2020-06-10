@@ -131,17 +131,12 @@ const runMingw = async () => {
 
     fs.mkdirSync(cache_dir, { recursive: true })
 
-    console.log(`cache_dir  ${cache_dir}  exists ${fs.existsSync(cache_dir)}`)
-    
     cache_dir = win2nix(cache_dir)
-
-    console.log(`cache_dir  ${cache_dir}`)
 
     conf = conf.replace(/^CheckSpace/m, '#CheckSpace')
     conf = conf.replace(/^#CacheDir( += )[^\n]+/m, (m, p1) => {
       return `CacheDir ${p1}${cache_dir}`
     })
-    console.log(`\n\n${conf.slice(0,970)}\n\n`)
     fs.writeFileSync(conf_fn, conf, 'utf-8')
   }
 

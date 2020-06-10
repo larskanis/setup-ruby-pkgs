@@ -75,9 +75,13 @@ jobs:
           if ('${{ matrix.ruby }}' -ge '2.4') {
             ridk version
           }
+
       - name: gem install openssl
         if:   (matrix.ruby >= '2.4') && (matrix.ruby <= '3.2')
         run:  |
           gem install openssl -N
           ruby -ropenssl -e "puts 'Built with: ' + OpenSSL::OPENSSL_VERSION"
           ruby -ropenssl -e "puts 'Running:    ' + OpenSSL::OPENSSL_LIBRARY_VERSION"
+
+      - name: dir msys2 package cache
+        run: dir d:\a\_temp\pacman\pkg

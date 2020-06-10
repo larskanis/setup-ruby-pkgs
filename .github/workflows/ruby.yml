@@ -3,41 +3,6 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  main:
-    name: >-
-      ${{ matrix.os }} ${{ matrix.ruby }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-20.04, ubuntu-18.04, macos-latest ]
-        ruby: [ ruby-head, 2.7, 2.5, 2.2 ]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Ruby Install
-        uses: ./
-        with:
-          ruby-version: ${{ matrix.ruby }}
-          apt-get: ragel
-          brew: ragel
-          setup-ruby-ref: MSP-Greg/ruby-setup-ruby/bundler-cache
-
-      - name: Info
-        run:  |
-          ruby -v
-          echo ''
-          gcc --version
-          echo ''
-          openssl version
-          echo ''
-          ragel --version
-          echo ''
-          bundler version
-          echo ''
-          gem --version
-
   win32:
     name: >-
       ${{ matrix.os }} ${{ matrix.ruby }}

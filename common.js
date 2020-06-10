@@ -99,7 +99,7 @@ export const getInput = (name) => core.getInput(name).replace(/[^a-z_ \d.-]+/gi,
 
 // convert windows path like C:\Users\runneradmin to /c/Users/runneradmin
 export const win2nix = (path) => { 
-  (/^[A-Z]:/i.test(path) ?
+  return (/^[A-Z]:/i.test(path) ?
     ('/' + path[0].toLowerCase() + path.split(':')[1]) :
     path).replace(/\\/g, '/').replace(/ /g, '\\ ')
 }

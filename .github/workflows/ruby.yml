@@ -58,6 +58,7 @@ jobs:
           mingw: _upgrade_ openssl ragel
           mswin: bison mingw-w64-x86_64-ragel
           vcpkg: readline
+          setup-ruby-ref: MSP-Greg/ruby-setup-ruby/bundler-cache
 
       - name: Info
         run:  |

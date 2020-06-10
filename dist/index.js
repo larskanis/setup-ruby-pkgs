@@ -670,7 +670,8 @@ const runMingw = async () => {
 
   // Skip pacman disk space check, move package cache to SSD drive
   if (ruby.abiVers >= '2.4.0') {
-    let conf      = fs.readFileSync('./pacman.conf', 'utf-8')
+    const conf_fn = 'C:\\msys64\\etc\\pacman.conf'
+    let conf      = fs.readFileSync(conf_fn, 'utf-8')
     let cache_dir = `${process.env.RUNNER_TEMP}\\pacman\\pkg`
 
     fs.mkdirSync(cache_dir, { recursive: true })
@@ -681,7 +682,7 @@ const runMingw = async () => {
     conf = conf.replace(/^#CacheDir( += )[^\n]+/m, (m, p1) => {
       return `CacheDir ${p1}${cache_dir}`
     })
-    fs.writeFileSync('./pacman.conf', conf, 'utf-8')
+    fs.writeFileSync(conf_fn, conf, 'utf-8')
   }
 
   if (mingw.includes('_upgrade_')) {

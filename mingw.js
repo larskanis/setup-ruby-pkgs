@@ -3,7 +3,7 @@
 const fs   = require('fs')
 const core = require('@actions/core')
 
-const { download, execSync, execSyncQ, grpSt, grpEnd, getInput } = require('./common')
+const { download, execSync, execSyncQ, grpSt, grpEnd, getInput, win2nix } = require('./common')
 
 // group start time
 let msSt
@@ -122,6 +122,23 @@ const installMSYS2 = async () => {
 
 // install MinGW packages from mingw input
 const runMingw = async () => {
+
+  // Skip pacman disk space check, move package cache to SSD drive
+  if (ruby.abiVers >= '2.4.0') {
+    let conf      = fs.readFileSync('./pacman.conf', 'utf-8')
+    let cache_dir = `${process.env.RUNNER_TEMP}\\pacman\\pkg`
+
+    fs.mkdirSync(cache_dir, { recursive: true })
+    
+    cache_dir = win2nix(cache_dir)
+
+    conf = conf.replace(/^CheckSpace/m, '#CheckSpace')
+    conf = conf.replace(/^#CacheDir( += )[^\n]+/m, (m, p1) => {
+      return `CacheDir ${p1}${cache_dir}`
+    })
+    fs.writeFileSync('./pacman.conf', conf, 'utf-8')
+  }
+
   if (mingw.includes('_upgrade_')) {
     await updateGCC()
     msys2Sync = '-S'

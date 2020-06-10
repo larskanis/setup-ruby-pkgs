@@ -426,6 +426,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "grpEnd", function() { return grpEnd; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "log", function() { return log; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getInput", function() { return getInput; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "win2nix", function() { return win2nix; });
 
 
 const cp = __webpack_require__(129)
@@ -525,6 +526,13 @@ const log = (logText, color = 'yel') => {
 
 const getInput = (name) => core.getInput(name).replace(/[^a-z_ \d.-]+/gi, '').trim().toLowerCase()
 
+// convert windows path like C:\Users\runneradmin to /c/Users/runneradmin
+const win2nix = (path) => { 
+  (/^[A-Z]:/i.test(path) ?
+    ('/' + path[0].toLowerCase() + path.split(':')[1]) :
+    path).replace(/\\/g, '/').replace(/ /g, '\\ ')
+}
+
 
 /***/ }),
 
@@ -540,7 +548,7 @@ __webpack_require__.r(__webpack_exports__);
 const fs   = __webpack_require__(747)
 const core = __webpack_require__(276)
 
-const { download, execSync, execSyncQ, grpSt, grpEnd, getInput } = __webpack_require__(498)
+const { download, execSync, execSyncQ, grpSt, grpEnd, getInput, win2nix } = __webpack_require__(498)
 
 // group start time
 let msSt
@@ -659,6 +667,23 @@ const installMSYS2 = async () => {
 
 // install MinGW packages from mingw input
 const runMingw = async () => {
+
+  // Skip pacman disk space check, move package cache to SSD drive
+  if (ruby.abiVers >= '2.4.0') {
+    let conf      = fs.readFileSync('./pacman.conf', 'utf-8')
+    let cache_dir = `${process.env.RUNNER_TEMP}\\pacman\\pkg`
+
+    fs.mkdirSync(cache_dir, { recursive: true })
+    
+    cache_dir = win2nix(cache_dir)
+
+    conf = conf.replace(/^CheckSpace/m, '#CheckSpace')
+    conf = conf.replace(/^#CacheDir( += )[^\n]+/m, (m, p1) => {
+      return `CacheDir ${p1}${cache_dir}`
+    })
+    fs.writeFileSync('./pacman.conf', conf, 'utf-8')
+  }
+
   if (mingw.includes('_upgrade_')) {
     await updateGCC()
     msys2Sync = '-S'

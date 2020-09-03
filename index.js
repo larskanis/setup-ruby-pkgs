@@ -2,6 +2,7 @@
 
 (async () => {
   const core = require('@actions/core')
+  const { performance } = require('perf_hooks')
 
   const common = require('./common')
 
@@ -10,12 +11,21 @@
   let ref = core.getInput('setup-ruby-ref')
   if (ref === '') { ref = 'ruby/setup-ruby/v1' }
 
+  let timeSt
+  let doBundler = false
+
+  const timeEnd = (msSt) => {
+    const timeStr = ((performance.now() - msSt)/1000).toFixed(2).padStart(6)
+    console.log(`  took ${timeStr} s`)
+  }
+
   try {
 
     core.exportVariable('TMPDIR', process.env.RUNNER_TEMP)
     core.exportVariable('CI'    , 'true')
 
     const pkgs = async () => {
+      timeEnd(timeSt)
       common.log(`  —————————————————— Package tasks using: MSP-Greg/setup-ruby-pkgs ${common.version}`)
 
       let runner
@@ -39,9 +49,13 @@
 
       if ((core.getInput('ruby-version') !== 'none') &&
           (core.getInput('bundler') !== 'none')    ) {
+        doBundler = true
+        timeSt = performance.now()
         common.log(`  —————————————————— Bundler tasks using: ${ref}`)
       }
     }
+
+    timeSt = performance.now()
 
     if (core.getInput('ruby-version') !== 'none') {
       const fn = `${process.env.RUNNER_TEMP}\\setup_ruby.js`
@@ -50,6 +64,7 @@
       // pass pkgs function to setup-ruby, allows package installation before
       // 'bundle install' but after ruby setup (install, paths, compile tools, etc)
       await require(fn).setupRuby({afterSetupPathHook: pkgs})
+      if (doBundler) { timeEnd(timeSt) }
     } else {
       // install packages if setup-ruby is not used
       await pkgs()

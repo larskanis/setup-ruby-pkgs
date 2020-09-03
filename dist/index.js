@@ -311,10 +311,9 @@ const updateKeyRing = async (vers) => {
 
     const pkgs = async (ri) => {
       rubyInfo = ri
-      console.log(rubyInfo)
       timeEnd(timeSt)
       common.log(`  —————————————————— Package tasks using: MSP-Greg/setup-ruby-pkgs ${common.version}`)
-
+      console.log(rubyInfo)
       let runner
       let ruby
 

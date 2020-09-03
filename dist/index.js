@@ -295,6 +295,7 @@ const updateKeyRing = async (vers) => {
   let ref = core.getInput('setup-ruby-ref')
   if (ref === '') { ref = 'ruby/setup-ruby/v1' }
 
+  let rubyInfo
   let timeSt
   let doBundler = false
 
@@ -308,7 +309,9 @@ const updateKeyRing = async (vers) => {
     core.exportVariable('TMPDIR', process.env.RUNNER_TEMP)
     core.exportVariable('CI'    , 'true')
 
-    const pkgs = async () => {
+    const pkgs = async (ri) => {
+      rubyInfo = ri
+      console.log(rubyInfo)
       timeEnd(timeSt)
       common.log(`  —————————————————— Package tasks using: MSP-Greg/setup-ruby-pkgs ${common.version}`)
 
